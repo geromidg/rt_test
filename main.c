@@ -76,9 +76,8 @@ static void updateInterval(u64_t interval);
 /********************* Static Task Function Prototypes ***********************/
 
 static void INIT_TASK(int argc, char** argv);
-static void EXIT_TASK(void);
-
 static void* MAIN_TASK(void* ptr);
+static void EXIT_TASK(void);
 
 /************************** Static General Functions *************************/
 
@@ -116,16 +115,16 @@ void INIT_TASK(int argc, char** argv)
         cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
         cycle_num = atoi(argv[2]);
         timestamps = (f32_t*) malloc (sizeof(f32_t) * cycle_num);
-
-        /* Synchronize scheduler's timer. */
-        clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
-
-        initStatistics((f32_t)cycle_time, main_task_timer.tv_nsec);
 }
 
 void* MAIN_TASK(void* ptr)
 {
         u32_t i;
+
+        /* Synchronize scheduler's timer. */
+        clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
+
+        initStatistics((f32_t)cycle_time, main_task_timer.tv_nsec);
 
         for (i = 0; i < cycle_num; i++)
         {
@@ -139,11 +138,14 @@ void* MAIN_TASK(void* ptr)
                 (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &main_task_timer, NULL);
         }
 
+        FILE *file = fopen("timestamps.txt", "w");
         printf("\n# Timestamps #\n");
         for (i = 0; i < cycle_num; i++)
         {
                 printf("%.5f\n", timestamps[i]);
+                fprintf(file, "%.5f\n", timestamps[i]);
         }
+        fclose(file);
 
         printStatistics();
 
