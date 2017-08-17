@@ -5,35 +5,8 @@
   * The scheduler is the main entry of the system.
   * Its purpose is to execute and monitor all the tasks needed to complete a full cycle.
   *
-  * Two tasks run in parallel (in separate threads) using the Round-robin scheduling policy.
-  * Also, all both tasks share the same core (CPU affinity is 1).
-  *
-  * These tasks, are:
-  * 1. The MAIN task, that calls all the subtasks which execute the main functionality.
-  *    For the system to be cyclic executive, all of its subtasks are executed in a circular order.
-  *    Each subtask has a specific time slice (interval) under which it has to perform its function,
-  *    otherwise it is preempted.
-  *    All the time intervals, should total to the cycle time of the system (e.g. 40 ms).
-  *
-  * 2. The CAN_IRQ task, that handles the interrupts and implements the appropriate ISRs.
-  *    The MCP2515 CAN controller is hosted in BCM2837 using the GPIO interface via SPI.
-  *    Inside Linux, a CAN driver is implemented to handle the communication.
-  *    It is implemented as a network driver in the user-space using the preexisting SocketCan.
-  *    All the CAN frames received, go into a callback and store the data to an appropriate buffer.
-  *    Later, a scheduled task prepares all the received data that is later inputted to the algorithm.
-  *
-  * In addition, the INIT task initializes the system and runs only once on startup.
-  *
-  * The MAIN task consists of 5 subtasks that are executed in a pipeline manner.
-  * The most important subtasks are the RECV, ALGO and SEND.
-  *
-  * Finally, there is the NOOP (no operation) subtask, that is running when all
-  * the other subtasks have finished, in order to achieve a stable cycle.
-  *
-  * No preemption is currently done when a task exceeds its predefined execution time.
-  *
   * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
-  * @date September, 2016
+  * @date August, 2017
   */
 
 /******************************** Inclusions *********************************/
@@ -74,7 +47,13 @@
 /***************************** Static Variables ******************************/
 
 /** The cycle time between the task calls. */
-static long cycle_time;
+static u64_t cycle_time;
+
+/** The number of cycles the program will run for. */
+static u64_t cycle_num;
+
+/** The saved timestamp of each sample. */
+static f32_t* timestamps;
 
 /** The main timer of the scheduler. */
 static struct timespec main_task_timer;
@@ -92,21 +71,9 @@ static void prefaultStack(void);
   * @param interval The interval needed to perform the update.
   * @return Void.
   */
-static void updateInterval(long interval);
-
-/**
-  * @brief Execute a subtask.
-  * @details Updates the scheduler's timer with the subtask's interval,
-  *          calls the subtasks' routine and the sleeps for the remaining time.
-  * @param task Function pointer to the subtask.
-  * @todo Monitor and preempt the task if its time slice is exceeded!
-  * @return Void.
-  */
-static void runTask(void (*task)(void), long interval);
+static void updateInterval(u64_t interval);
 
 /********************* Static Task Function Prototypes ***********************/
-
-static void SAMPLE_SUBTASK(void);
 
 static void INIT_TASK(int argc, char** argv);
 static void EXIT_TASK(void);
@@ -124,11 +91,11 @@ void prefaultStack(void)
         return;
 }
 
-void updateInterval(long interval)
+void updateInterval(u64_t interval)
 {
         main_task_timer.tv_nsec += interval;
 
-        /* normalize time (when nsec have overflowed) */
+        /* Normalize time (when nsec have overflowed) */
         while (main_task_timer.tv_nsec >= NSEC_PER_SEC)
         {
                 main_task_timer.tv_nsec -= NSEC_PER_SEC;
@@ -136,55 +103,56 @@ void updateInterval(long interval)
         }
 }
 
-void runTask(void (*task)(void), long interval)
-{
-        /* calculate next shot */
-        updateInterval(interval);
-
-        /* run the task */
-        task();
-
-        /* sleep for the remaining duration */
-        (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &main_task_timer, NULL);
-}
-
-/**************************** Static Task Functions **************************/
-
-void SAMPLE_SUBTASK(void)
-{
-        PrintStatistics();
-}
-
 /*****************************************************************************/
 
 void INIT_TASK(int argc, char** argv)
 {
-        if (argc != 2)
+        if (argc != 3)
         {
                 perror("Wrong number of arguments");
                 exit(-4);
         }
 
         cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
+        cycle_num = atoi(argv[2]);
+        timestamps = (f32_t*) malloc (sizeof(f32_t) * cycle_num);
+
+        /* Synchronize scheduler's timer. */
+        clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
+
+        initStatistics((f32_t)cycle_time, main_task_timer.tv_nsec);
 }
 
 void* MAIN_TASK(void* ptr)
 {
-        /* Synchronize scheduler's timer. */
-        clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
+        u32_t i;
 
-        InitStatistics((float)cycle_time, main_task_timer.tv_nsec);
-
-        while (1)
+        for (i = 0; i < cycle_num; i++)
         {
-                runTask(SAMPLE_SUBTASK, cycle_time);
+                /* Calculate next shot */
+                updateInterval(cycle_time);
+
+                /* Store the timestamp */
+                timestamps[i] = getTimestamp();
+
+                /* Sleep for the remaining duration */
+                (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &main_task_timer, NULL);
         }
+
+        printf("\n# Timestamps #\n");
+        for (i = 0; i < cycle_num; i++)
+        {
+                printf("%.5f\n", timestamps[i]);
+        }
+
+        printStatistics();
 
         return (void*)NULL;
 }
 
 void EXIT_TASK(void)
 {
+        free(timestamps);
 }
 
 /********************************** Main Entry *******************************/

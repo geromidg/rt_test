@@ -3,9 +3,9 @@
   * @brief Contains the basic data type definitions used commonly in all modules.
   *
   * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
-  * @date September, 2016
+  * @date August, 2017
   */
- 
+
 #ifndef DATA_TYPES_H
 #define DATA_TYPES_H
 
