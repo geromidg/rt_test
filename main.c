@@ -67,27 +67,14 @@
 /** This is the maximum size of the stack which is guaranteed safe access without faulting. */
 #define MAX_SAFE_STACK (128u * 1024u)
 
-/** The number of nsecs per sec. */
+/** The number of nsecs per sec/msec. */
 #define NSEC_PER_SEC (1000000000u)
-
-/** The scheduler's tick interval: 250us */
-#define SCHED_TICK (250000u)
-
-/** The cycle time between the task calls (40ms). */
-#define CYCLE_TIME ((SCHED_TICK) * 160u)
-
-/**
-  * @defgroup task_intervals The time intervals that each task is allowed to run.
-  * @todo Represent all tasks and their intervals in an array!
-  *
-  * @{
-  */
-#define DUMMY_SUBTASK_INTERVAL ((SCHED_TICK) * 40u)
-
-#define NOOP_SUBTASK_INTERVAL ((CYCLE_TIME) - (DUMMY_SUBTASK_INTERVAL))
-/** @} */
+#define NSEC_PER_MSEC (1000000u)
 
 /***************************** Static Variables ******************************/
+
+/** The cycle time between the task calls. */
+static long cycle_time;
 
 /** The main timer of the scheduler. */
 static struct timespec main_task_timer;
@@ -108,14 +95,6 @@ static void prefaultStack(void);
 static void updateInterval(long interval);
 
 /**
-  * @brief Checks if a tasks has exceeded its predefined excecution time.
-  * @details No preemption is done at the moment, only a warning is displayed.
-  * @todo Print task name as well!
-  * @return Void.
-  */
-/* static void check_task_execution_time(void); */
-
-/**
   * @brief Execute a subtask.
   * @details Updates the scheduler's timer with the subtask's interval,
   *          calls the subtasks' routine and the sleeps for the remaining time.
@@ -127,10 +106,9 @@ static void runTask(void (*task)(void), long interval);
 
 /********************* Static Task Function Prototypes ***********************/
 
-static void DUMMY_SUBTASK(void);
-static void NOOP_SUBTASK(void);
+static void SAMPLE_SUBTASK(void);
 
-static void INIT_TASK(void);
+static void INIT_TASK(int argc, char** argv);
 static void EXIT_TASK(void);
 
 static void* MAIN_TASK(void* ptr);
@@ -158,21 +136,6 @@ void updateInterval(long interval)
         }
 }
 
-/*
-void check_task_execution_time(void)
-{
-        struct timespec current_timer;
-
-        clock_gettime(CLOCK_MONOTONIC, &current_timer);
-
-        if ((main_task_timer.tv_sec == current_timer.tv_sec) ?
-                (main_task_timer.tv_nsec < current_timer.tv_nsec) : (main_task_timer.tv_sec < current_timer.tv_sec))
-        {
-                printf("Task exceeded its predefined execution time!");
-        }
-}
-*/
-
 void runTask(void (*task)(void), long interval)
 {
         /* calculate next shot */
@@ -181,28 +144,28 @@ void runTask(void (*task)(void), long interval)
         /* run the task */
         task();
 
-        /* it should not exceed interval. no preemption is done at the moment!!! */
-        /* check_task_execution_time(); */
-
         /* sleep for the remaining duration */
         (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &main_task_timer, NULL);
 }
 
 /**************************** Static Task Functions **************************/
 
-void DUMMY_SUBTASK(void)
+void SAMPLE_SUBTASK(void)
 {
         PrintStatistics();
 }
 
-void NOOP_SUBTASK(void)
-{
-}
-
 /*****************************************************************************/
 
-void INIT_TASK(void)
+void INIT_TASK(int argc, char** argv)
 {
+        if (argc != 2)
+        {
+                perror("Wrong number of arguments");
+                exit(-4);
+        }
+
+        cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
 }
 
 void* MAIN_TASK(void* ptr)
@@ -210,12 +173,11 @@ void* MAIN_TASK(void* ptr)
         /* Synchronize scheduler's timer. */
         clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
 
-        InitStatistics((float)CYCLE_TIME, main_task_timer.tv_nsec);
+        InitStatistics((float)cycle_time, main_task_timer.tv_nsec);
 
         while (1)
         {
-                runTask(DUMMY_SUBTASK, DUMMY_SUBTASK_INTERVAL);
-                runTask(NOOP_SUBTASK, NOOP_SUBTASK_INTERVAL);
+                runTask(SAMPLE_SUBTASK, cycle_time);
         }
 
         return (void*)NULL;
@@ -227,7 +189,7 @@ void EXIT_TASK(void)
 
 /********************************** Main Entry *******************************/
 
-int main(void)
+int main(int argc, char** argv)
 {
         cpu_set_t mask;
 
@@ -235,18 +197,7 @@ int main(void)
         pthread_attr_t attr_1;
         struct sched_param parm_1;
 
-        /* pthread_t thread_2; */
-        /* pthread_attr_t attr_2; */
-        /* struct sched_param parm_2; */
-
         /*********************************************************************/
-
-        /* Check if the task intervals have been set correctly. */
-        if (NOOP_SUBTASK_INTERVAL < 0)
-        {
-                perror("total task intervals exceed cycle time!");
-                exit(-1);
-        }
 
         /* Lock memory. */
         if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
@@ -267,7 +218,7 @@ int main(void)
 
         /*********************************************************************/
 
-        INIT_TASK();
+        INIT_TASK(argc, argv);
 
         /*********************************************************************/
 
@@ -282,19 +233,7 @@ int main(void)
 
         /*********************************************************************/
 
-        // pthread_attr_init(&attr_2);
-        // pthread_attr_getschedparam(&attr_2, &parm_2);
-        // parm_2.sched_priority = TASK_PRIORITY;
-        // pthread_attr_setschedpolicy(&attr_2, SCHED_RR);
-        // pthread_attr_setschedparam(&attr_2, &parm_2);
-
-        // (void)pthread_create(&thread_2, &attr_2, (void*)CAN_IRQ_TASK, (void*)NULL);
-        // pthread_setschedparam(thread_2, SCHED_RR, &parm_2);
-
-        /*********************************************************************/
-
         pthread_join(thread_1, NULL);
-        // pthread_join(thread_2, NULL);
 
         EXIT_TASK();
 
