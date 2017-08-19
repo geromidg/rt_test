@@ -31,10 +31,10 @@ static f32_t max_error = -1.f;
 /************************ Static Function Prototypes *************************/
 
 /**
- * @brief Update the errors according to the time delta.
- * @param time_delta The time difference between the current and previous cycle.
- * @return Void.
- */
+  * @brief Update the errors according to the time delta.
+  * @param time_delta The time difference between the current and previous cycle.
+  * @return Void.
+  */
 static void updateStatistics(s32_t time_delta);
 
 /***************************** Static Functions ******************************/
@@ -86,10 +86,20 @@ f32_t getTimestamp(void)
 	return current_t.tv_sec + (current_t.tv_nsec / (f32_t)1000000000u);
 }
 
-void printStatistics(void)
+void printStatistics(FILE* file)
 {
-	printf("\n# Statistics #\n");
-	printf("Average Error: %05.2f us\n", avg_error / 1000.f);
-	printf("Min Error: %05.2f us\n", min_error / 1000.f);
-	printf("Max Error: %05.2f us\n", max_error / 1000.f);
+	if (file == NULL)
+	{
+		printf("\n# Statistics #\n");
+		printf("Average Error: %05.2f us\n", avg_error / 1000.f);
+		printf("Min Error: %05.2f us\n", min_error / 1000.f);
+		printf("Max Error: %05.2f us\n", max_error / 1000.f);
+	}
+	else
+	{
+		fprintf(file, "# Statistics #\n");
+		fprintf(file, "Average Error: %05.2f us\n", avg_error / 1000.f);
+		fprintf(file, "Min Error: %05.2f us\n", min_error / 1000.f);
+		fprintf(file, "Max Error: %05.2f us\n", max_error / 1000.f);
+	}
 }

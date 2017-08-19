@@ -148,7 +148,11 @@ void* MAIN_TASK(void* ptr)
 
   if (file != NULL)
   {
+    printStatistics(NULL);  /* Print statistics to console */
+    printStatistics(file);  /* Print statistics to file */
+
     printf("\n# Timestamps #\n");
+    fprintf(file, "\n# Timestamps #\n");
 
     for (i = 0; i < cycle_num; i++)
     {
@@ -158,8 +162,6 @@ void* MAIN_TASK(void* ptr)
 
     fclose(file);
   }
-
-  printStatistics();
 
   return (void*)NULL;
 }

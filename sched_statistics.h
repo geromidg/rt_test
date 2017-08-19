@@ -36,11 +36,12 @@ void initStatistics(f32_t cycle, s32_t sched_timer_nsec);
 f32_t getTimestamp(void);
 
 /**
-  * @brief Print the scheduler's statistics to the screen.
+  * @brief Print the scheduler's statistics to file/console.
+  * @param file The file to print the statistics to. Print to console if NULL.
   * @warning If the system's cycle time is too low, the buffer might overflow!
   * @return Void.
   */
-void printStatistics(void);
+void printStatistics(FILE* file);
 
 /*****************************************************************************/
 
