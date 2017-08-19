@@ -1,4 +1,4 @@
-TARGET = project_2
+TARGET = rt_test
 
 LIBS = -pthread -lrt
 CC = gcc
