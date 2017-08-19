@@ -113,8 +113,8 @@ void INIT_TASK(int argc, char** argv)
     exit(-4);
   }
 
-  cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
-  cycle_num = atoi(argv[2]);
+  cycle_time = strtoul(argv[1], NULL, 0) * NSEC_PER_MSEC;
+  cycle_num = strtoul(argv[2], NULL, 0);
 
   if (!(timestamps = (f32_t*) malloc(sizeof(f32_t) * cycle_num)))
   {
