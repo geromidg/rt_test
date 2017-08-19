@@ -1,13 +1,11 @@
 /**
   * @file main.c
-  * @brief Contains the scheduler and the entry point for the implementation of Project 2 on BCM2837.
-  *
-  * The scheduler is the main entry of the system.
-  * Its purpose is to execute and monitor all the tasks needed to complete a full cycle.
+  * @brief Contains the scheduler and the entry point for
+  *        the implementation of RTTest on BCM2837.
   *
   * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
   * @date August, 2017
-  */
+ */
 
 /******************************** Inclusions *********************************/
 
@@ -33,16 +31,19 @@
   * Since the PRREMPT_RT uses 50 as the priority of kernel tasklets and
   * interrupt handlers by default, the maximum available priority is chosen.
   * The priority of each task should be the same, since the Round-Robin
-  * scheduling policy is used and each task is executed with the same time slice.
+  * scheduling policy is used and each task is executed with the same
+  * time slice.
   */
 #define TASK_PRIORITY (49u)
 
-/** This is the maximum size of the stack which is guaranteed safe access without faulting. */
+/** This is the maximum size of the stack which is
+  * guaranteed safe access without faulting.
+  */
 #define MAX_SAFE_STACK (128u * 1024u)
 
 /** The number of nsecs per sec/msec. */
-#define NSEC_PER_SEC (1000000000u)
-#define NSEC_PER_MSEC (1000000u)
+#define NSEC_PER_SEC (1000000000ul)
+#define NSEC_PER_MSEC (1000000ul)
 
 /***************************** Static Variables ******************************/
 
@@ -83,136 +84,136 @@ static void EXIT_TASK(void);
 
 void prefaultStack(void)
 {
-        unsigned char dummy[MAX_SAFE_STACK];
+  unsigned char dummy[MAX_SAFE_STACK];
 
-        memset(dummy, 0, MAX_SAFE_STACK);
+  memset(dummy, 0, MAX_SAFE_STACK);
 
-        return;
+  return;
 }
 
 void updateInterval(u64_t interval)
 {
-        main_task_timer.tv_nsec += interval;
+  main_task_timer.tv_nsec += interval;
 
-        /* Normalize time (when nsec have overflowed) */
-        while (main_task_timer.tv_nsec >= NSEC_PER_SEC)
-        {
-                main_task_timer.tv_nsec -= NSEC_PER_SEC;
-                main_task_timer.tv_sec++;
-        }
+  /* Normalize time (when nsec have overflowed) */
+  while (main_task_timer.tv_nsec >= NSEC_PER_SEC)
+  {
+    main_task_timer.tv_nsec -= NSEC_PER_SEC;
+    main_task_timer.tv_sec++;
+  }
 }
 
-/*****************************************************************************/
+/***************************** Static Task Functions *************************/
 
 void INIT_TASK(int argc, char** argv)
 {
-        if (argc != 3)
-        {
-                perror("Wrong number of arguments");
-                exit(-4);
-        }
+  if (argc != 3)
+  {
+    perror("Wrong number of arguments");
+    exit(-4);
+  }
 
-        cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
-        cycle_num = atoi(argv[2]);
+  cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
+  cycle_num = atoi(argv[2]);
 
-        if (!(timestamps = (f32_t*) malloc(sizeof(f32_t) * cycle_num)))
-      	{
-        		perror("Memory allocation failed!");
-        		exit(-5);
-      	}
+  if (!(timestamps = (f32_t*) malloc(sizeof(f32_t) * cycle_num)))
+  {
+    perror("Memory allocation failed!");
+    exit(-5);
+  }
 }
 
 void* MAIN_TASK(void* ptr)
 {
-        u32_t i;
+  u32_t i;
 
-        /* Synchronize scheduler's timer. */
-        clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
+  /* Synchronize scheduler's timer. */
+  clock_gettime(CLOCK_MONOTONIC, &main_task_timer);
 
-        initStatistics((f32_t)cycle_time, main_task_timer.tv_nsec);
+  initStatistics((f32_t)cycle_time, main_task_timer.tv_nsec);
 
-        for (i = 0; i < cycle_num; i++)
-        {
-                /* Calculate next shot */
-                updateInterval(cycle_time);
+  for (i = 0; i < cycle_num; i++)
+  {
+    /* Calculate next shot */
+    updateInterval(cycle_time);
 
-                /* Store the timestamp */
-                timestamps[i] = getTimestamp();
+    /* Store the timestamp */
+    timestamps[i] = getTimestamp();
 
-                /* Sleep for the remaining duration */
-                (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &main_task_timer, NULL);
-        }
+    /* Sleep for the remaining duration */
+    (void)clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &main_task_timer, NULL);
+  }
 
-        FILE *file = fopen("timestamps.txt", "w");
-        printf("\n# Timestamps #\n");
-        for (i = 0; i < cycle_num; i++)
-        {
-                printf("%.5f\n", timestamps[i]);
-                fprintf(file, "%.5f\n", timestamps[i]);
-        }
-        fclose(file);
+  FILE *file = fopen("timestamps.txt", "w");
+  printf("\n# Timestamps #\n");
+  for (i = 0; i < cycle_num; i++)
+  {
+    printf("%.5f\n", timestamps[i]);
+    fprintf(file, "%.5f\n", timestamps[i]);
+  }
+  fclose(file);
 
-        printStatistics();
+  printStatistics();
 
-        return (void*)NULL;
+  return (void*)NULL;
 }
 
 void EXIT_TASK(void)
 {
-        free(timestamps);
+  free(timestamps);
 }
 
 /********************************** Main Entry *******************************/
 
 int main(int argc, char** argv)
 {
-        cpu_set_t mask;
+  cpu_set_t mask;
 
-        pthread_t thread_1;
-        pthread_attr_t attr_1;
-        struct sched_param parm_1;
+  pthread_t thread_1;
+  pthread_attr_t attr_1;
+  struct sched_param parm_1;
 
-        /*********************************************************************/
+  /***********************************/
 
-        /* Lock memory. */
-        if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
-        {
-                perror("mlockall failed");
-                exit(-2);
-        }
+  /* Lock memory. */
+  if(mlockall(MCL_CURRENT|MCL_FUTURE) == -1)
+  {
+    perror("mlockall failed");
+    exit(-2);
+  }
 
-        prefaultStack();
+  prefaultStack();
 
-        CPU_ZERO(&mask);
-        CPU_SET(NUM_CPUS, &mask);
-        if (sched_setaffinity(0, sizeof(mask), &mask) == -1)
-        {
-                perror("Could not set CPU Affinity");
-                exit(-3);
-        }
+  CPU_ZERO(&mask);
+  CPU_SET(NUM_CPUS, &mask);
+  if (sched_setaffinity(0, sizeof(mask), &mask) == -1)
+  {
+    perror("Could not set CPU Affinity");
+    exit(-3);
+  }
 
-        /*********************************************************************/
+  /***********************************/
 
-        INIT_TASK(argc, argv);
+  INIT_TASK(argc, argv);
 
-        /*********************************************************************/
+  /***********************************/
 
-        pthread_attr_init(&attr_1);
-        pthread_attr_getschedparam(&attr_1, &parm_1);
-        parm_1.sched_priority = TASK_PRIORITY;
-        pthread_attr_setschedpolicy(&attr_1, SCHED_RR);
-        pthread_attr_setschedparam(&attr_1, &parm_1);
+  pthread_attr_init(&attr_1);
+  pthread_attr_getschedparam(&attr_1, &parm_1);
+  parm_1.sched_priority = TASK_PRIORITY;
+  pthread_attr_setschedpolicy(&attr_1, SCHED_RR);
+  pthread_attr_setschedparam(&attr_1, &parm_1);
 
-        (void)pthread_create(&thread_1, &attr_1, (void*)MAIN_TASK, (void*)NULL);
-        pthread_setschedparam(thread_1, SCHED_RR, &parm_1);
+  (void)pthread_create(&thread_1, &attr_1, (void*)MAIN_TASK, (void*)NULL);
+  pthread_setschedparam(thread_1, SCHED_RR, &parm_1);
 
-        /*********************************************************************/
+  /***********************************/
 
-        pthread_join(thread_1, NULL);
+  pthread_join(thread_1, NULL);
 
-        EXIT_TASK();
+  EXIT_TASK();
 
-        /*********************************************************************/
+  /***********************************/
 
-        exit(0);
+  exit(0);
 }
