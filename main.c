@@ -114,7 +114,12 @@ void INIT_TASK(int argc, char** argv)
 
         cycle_time = atoi(argv[1]) * NSEC_PER_MSEC;
         cycle_num = atoi(argv[2]);
-        timestamps = (f32_t*) malloc (sizeof(f32_t) * cycle_num);
+
+        if (!(timestamps = (f32_t*) malloc(sizeof(f32_t) * cycle_num)))
+      	{
+        		perror("Memory allocation failed!");
+        		exit(-5);
+      	}
 }
 
 void* MAIN_TASK(void* ptr)
