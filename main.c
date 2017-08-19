@@ -145,13 +145,19 @@ void* MAIN_TASK(void* ptr)
   }
 
   FILE *file = fopen("timestamps.txt", "w");
-  printf("\n# Timestamps #\n");
-  for (i = 0; i < cycle_num; i++)
+
+  if (file != NULL)
   {
-    printf("%.5f\n", timestamps[i]);
-    fprintf(file, "%.5f\n", timestamps[i]);
+    printf("\n# Timestamps #\n");
+
+    for (i = 0; i < cycle_num; i++)
+    {
+      printf("%.5f\n", timestamps[i]);
+      fprintf(file, "%.5f\n", timestamps[i]);
+    }
+
+    fclose(file);
   }
-  fclose(file);
 
   printStatistics();
 
