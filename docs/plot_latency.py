@@ -49,7 +49,7 @@ def generate_plot(x, y):
     axes = figure.add_subplot(1, 1, 1)
     axes.set_xlabel('Samples', fontsize=18)
     axes.set_ylabel('Latency [usec]', fontsize=18)
-    axes.bar(x, y, width=0.005, color="grey")
+    axes.bar(x, y, width=0.1, color="grey")
     axes.set_xticks([])
     axes.margins(0.04)
 
