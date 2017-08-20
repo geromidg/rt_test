@@ -2,7 +2,7 @@
   * @file sched_statistics.c
   * @brief Implements a statistics module to monitor the scheduler's timing.
   *
-  * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
+  * @author Dimitrios Panagiotis G. Geromichalos (geromidg@gmai.com)
   * @date August, 2017
   */
 

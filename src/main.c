@@ -3,7 +3,7 @@
   * @brief Contains the scheduler and the entry point for
   *        the implementation of RTTest on BCM2837.
   *
-  * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
+  * @author Dimitrios Panagiotis G. Geromichalos (geromidg@gmai.com)
   * @date August, 2017
  */
 

@@ -2,7 +2,7 @@
   * @file sched_statistics.h
   * @brief Contains the declarations of functions defined in sched_statistics.c.
   *
-  * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
+  * @author Dimitrios Panagiotis G. Geromichalos (geromidg@gmai.com)
   * @date August, 2017
   */
 

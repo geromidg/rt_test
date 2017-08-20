@@ -2,7 +2,7 @@
   * @file data_types.h
   * @brief Contains the basic data type definitions used commonly in all modules.
   *
-  * @author Dimitrios Panagiotis G. Geromichalos (dgeromichalos)
+  * @author Dimitrios Panagiotis G. Geromichalos (geromidg@gmai.com)
   * @date August, 2017
   */
 
