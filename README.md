@@ -38,30 +38,23 @@ A scheduler **statistics module** was created in order to monitor the performanc
 Each time a sample is collected, these statistics are updated with regard to the previous sample.
 
 # Tests & Results
-In order to evaluate the magnitude of the latency, three experiments were carried out on the embedded system.<br>
+In order to evaluate the magnitude of the latency, two experiments were carried out on the embedded system.<br>
 Below are the plots of the latency of every sample (with respect to its previous sample) for every experiment.<br>
 The statistics of every run are also provided.
 
-1. 1000 samples with a cycle time of 10 ms.<br>
+1. Cycle time of 10 ms.<br>
 Average Error: 06.12 us<br>
 Min Error: 00.02 us<br>
 Max Error: 72.58 us
 
 ![Experiment 1](docs/latency_10.png)
 
-2. 100 samples with a cycle time of 100 ms.<br>
+2. Cycle time of 100 ms.<br>
 Average Error: 14.82 us<br>
 Min Error: 00.02 us<br>
-Max Error: 71.85 us
+Max Error: 66.02 us
  
 ![Experiment 2](docs/latency_100.png)
-
-3. 20 samples with a cycle time of 500 ms.<br>
-Average Error: 09.33 us<br>
-Min Error: 00.01 us<br>
-Max Error: 66.02 us
-
-![Experiment 3](docs/latency_500.png)
 
 # Problems & Improvements
 Since the user can define the number of samples to be collected by the test program with an argument, the required **memory is allocated on runtime**.<br>
