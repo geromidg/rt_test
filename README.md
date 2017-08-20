@@ -31,10 +31,10 @@ The hosting OS is a Linux flavor, specific to RPi, called Raspbian.<br>
 The tests run on a 4.4.34 Linux kernel.
 
 # Implementation
-In order to collect all timestamps and provide latency statistics, a cyclic executive task is created on a separate thread that runs on a user-defined cycle time.<br>
+In order to collect all timestamps and provide latency statistics, a **cyclic executive task** is created on a separate thread that runs on a user-defined cycle time.<br>
 At the start of every iteration of the sampling process, the cycle time is added to the task's timer. After the sampling is done, the task sleeps for the remaining of the time before starting a new iteration.
 
-A scheduler statistics module was created in order to monitor the performance of the system during the sampling. It monitors the average, minimum and maximum latency errors during a test run.<br>
+A scheduler **statistics module** was created in order to monitor the performance of the system during the sampling. It monitors the average, minimum and maximum latency errors during a test run.<br>
 Each time a sample is collected, these statistics are updated with regard to the previous sample.
 
 # Tests & Results
@@ -43,32 +43,29 @@ Below are the plots of the latency of every sample (with respect to its previous
 The statistics of every run are also provided.
 
 1. 1000 samples with a cycle time of 10 ms.<br>
-
-![Experiment 1](docs/latency_10.png)
-
 Average Error: 06.12 us<br>
 Min Error: 00.02 us<br>
 Max Error: 72.58 us
 
-2. 100 samples with a cycle time of 100 ms.<br>
- 
-![Experiment 2](docs/latency_100.png)
+![Experiment 1](docs/latency_10.png)
 
+2. 100 samples with a cycle time of 100 ms.<br>
 Average Error: 14.82 us<br>
 Min Error: 00.02 us<br>
 Max Error: 71.85 us
+ 
+![Experiment 2](docs/latency_100.png)
 
 3. 20 samples with a cycle time of 500 ms.<br>
-
-![Experiment 3](docs/latency_500.png)
-
 Average Error: 09.33 us<br>
 Min Error: 00.01 us<br>
 Max Error: 66.02 us
 
+![Experiment 3](docs/latency_500.png)
+
 # Problems & Improvements
 Since the user can define the number of samples to be collected by the test program with an argument, the required **memory is allocated on runtime**.<br>
-A way to avoid this, would be for the user to define the desired number of samples at compile-time.<br><br>
+A way to avoid this would be for the user to define the desired number of samples at compile-time.<br><br>
 Static allocation should be, in general, preferred in an embedded system.<br>
 If the application is safety-critical, dynamic allocation should be avoided at all costs, since an allocation failure could be catastrophic.<br>
 <br><br><br><br>
